@@ -1,0 +1,22 @@
+{
+  "name": "khoonpash",
+  "version": "0.0.0",
+  "description": "",
+  "main": "index.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1",
+    "build": "browserify -t browserify-shader index.js > build/main.js",
+    "watch": "watchify -t browserify-shader index.js -o build/main.js"
+  },
+  "author": "",
+  "license": "BSD",
+  "devDependencies": {
+    "browserify": "^11.0.1",
+    "browserify-shader": "^0.1.0",
+    "watchify": "^3.3.1"
+  },
+  "dependencies": {
+    "lodash": "~3.10.1",
+    "three": "~0.71.0"
+  }
+}
