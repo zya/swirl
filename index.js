@@ -1,4 +1,6 @@
 var THREE = require('three');
+THREE.OBJLoader = require('./lib/objLoader')(THREE);
+var loader = new THREE.OBJLoader();
 var _ = require('lodash');
 
 var mouseX = 0;
@@ -10,10 +12,11 @@ var renderer = new THREE.WebGLRenderer({
   antialias: true
 });
 
+
 renderer.setSize(window.innerWidth, window.innerHeight);
 document.body.appendChild(renderer.domElement);
 
-renderer.domElement.addEventListener('mousemove', function (event) {
+renderer.domElement.addEventListener('mousemove', function(event) {
   event.preventDefault();
   mouseX = (event.clientX - window.innerWidth / 2);
   mouseY = (event.clientY - window.innerHeight / 2);
@@ -67,8 +70,12 @@ var material = new THREE.ShaderMaterial({
   wireframe: true
 });
 
+loader.load('./objects/male02.obj', function(object) {
+  scene.add(object);
+});
+
 var mesh = new THREE.Mesh(geometry, material);
-scene.add(mesh);
+// scene.add(mesh);
 
 function animate() {
   requestAnimationFrame(animate);
