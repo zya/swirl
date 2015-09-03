@@ -10,7 +10,7 @@ void main() {
   vec4 f3 = texture2D(sufis3, vUv) * 10.0;
   vec4 mixture = (f * f2 * 2.0);
   if (mixture.x > 1.0) {
-    // mixture = vec4(1.0, 1.0, 1.0, 1.0);
+    // mixture = vec4(0.5, 0.5, 1.0, 1.0);
   }
 
   gl_FragColor = mixture;

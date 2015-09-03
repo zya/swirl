@@ -7,9 +7,9 @@ uniform float scale;
 varying vec2 vUv;
 void main() {
   vUv = uv;
-  vec4 color = texture2D(sufis, uv) * 200.0;
-  vec4 color2 = texture2D(sufis2, uv) * 0.5;
-  vec4 color3 = 1.0 - texture2D(sufis3, uv) * 2.0;
+  vec4 color = texture2D(sufis, uv) * 400.0;
+  vec4 color2 = texture2D(sufis2, uv) * 0.8;
+  vec4 color3 = 1.0 - texture2D(sufis3, uv) * 5.0;
 
   float depth = (position * color2.r).x * scale;
   float amp = 1.0 - ((position * color.b).z) * 20.0;

@@ -2,10 +2,15 @@
 var THREE = require('three');
 THREE.OBJLoader = require('./lib/objLoader')(THREE);
 var loader = new THREE.OBJLoader();
+var morpher = require('./lib/generateMorphTargets');
+var maps = require('./lib/envMaps');
 var _ = require('lodash');
 
 var mouseX = 0;
 var mouseY = 0;
+windowHalfX = window.innerWidth / 2;
+windowHalfY = window.innerHeight / 2;
+var thing = new THREE.Mesh();
 var fs = require('./lib/shaders/fragment.frag')();
 var vs = require('./lib/shaders/vertex.vert')();
 
@@ -13,11 +18,10 @@ var renderer = new THREE.WebGLRenderer({
   antialias: true
 });
 
-
 renderer.setSize(window.innerWidth, window.innerHeight);
 document.body.appendChild(renderer.domElement);
 
-renderer.domElement.addEventListener('mousemove', function(event) {
+renderer.domElement.addEventListener('mousemove', function (event) {
   event.preventDefault();
   mouseX = (event.clientX - window.innerWidth / 2);
   mouseY = (event.clientY - window.innerHeight / 2);
@@ -28,7 +32,7 @@ var scene = new THREE.Scene();
 var camera = new THREE.PerspectiveCamera(75, window.innerWidth / window.innerHeight, 1, 10000);
 camera.position.z = 1600;
 
-var geometry = new THREE.PlaneBufferGeometry(1600, 900, 100, 150);
+var geometry = new THREE.PlaneBufferGeometry(1600, 900, 100, 100);
 
 var video = document.getElementById('video');
 var video2 = document.getElementById('video2');
@@ -71,23 +75,103 @@ var material = new THREE.ShaderMaterial({
   wireframe: true
 });
 
-loader.load('./objects/male02.obj', function(object) {
-  scene.add(object);
+var ambient = new THREE.AmbientLight(0xffffff);
+scene.add(ambient);
+
+loader.load('./objects/nas-1.obj', function (object) {
+  object.traverse(function (traversed) {
+    console.log(traversed);
+    thing = traversed.children[0];
+    morpher(thing.geometry);
+    geometry.normalizeNormals();
+    thing.material = new THREE.MeshLambertMaterial({
+      envMap: maps.reflection,
+      morphTargets: true,
+      specular: 0x009900,
+      shininess: 30,
+      wireframe: false
+    });
+    thing.position.x = -1400;
+    thing.position.y = -600;
+    thing.position.z = 190;
+    thing.scale.x = 2.8;
+    thing.scale.y = 2.8;
+    scene.add(thing);
+  });
 });
 
+document.addEventListener('mousemove', function (event) {
+  mouseX = (event.clientX - windowHalfX) * 1.05;
+  mouseY = (event.clientY - windowHalfY) * 1.5;
+});
 var mesh = new THREE.Mesh(geometry, material);
-// scene.add(mesh);
+scene.add(mesh);
 
 function animate() {
   requestAnimationFrame(animate);
-  mesh.rotation.y += mouseX * 0.000001;
-  mesh.rotation.x += mouseY * 0.000001;
+  camera.position.x += (mouseX - camera.position.x) * 0.005;
+  camera.position.y += (-mouseY - camera.position.y) * 0.005;
+  camera.lookAt(scene.position);
   renderer.render(scene, camera);
 }
 
 animate();
+},{"./lib/envMaps":2,"./lib/generateMorphTargets":3,"./lib/objLoader":4,"./lib/shaders/fragment.frag":5,"./lib/shaders/vertex.vert":6,"lodash":7,"three":8}],2:[function(require,module,exports){
+var THREE = require('three');
+var maps = (function () {
 
-},{"./lib/objLoader":2,"./lib/shaders/fragment.frag":3,"./lib/shaders/vertex.vert":4,"lodash":5,"three":6}],2:[function(require,module,exports){
+  var path = "../images/cubemap/";
+  var format = '.jpg';
+  var urls = [
+    path + 'px' + format, path + 'nx' + format,
+    path + 'py' + format, path + 'ny' + format,
+    path + 'pz' + format, path + 'nz' + format
+  ];
+
+  var textureCube = THREE.ImageUtils.loadTextureCube(urls, THREE.CubeRefractionMapping);
+  var reflectionCube = THREE.ImageUtils.loadTextureCube(urls);
+  reflectionCube.format = THREE.RGBFormat;
+
+  var refractionCube = new THREE.Texture(reflectionCube.image, THREE.CubeRefractionMapping);
+  reflectionCube.format = THREE.RGBFormat;
+
+  return {
+    none: null,
+    reflection: reflectionCube,
+    refraction: refractionCube
+  };
+
+})();
+
+module.exports = maps;
+},{"three":8}],3:[function(require,module,exports){
+var THREE = require('three');
+
+module.exports = function generateMorphTargets(geometry) {
+
+  var vertices = [],
+    scale;
+
+  for (var i = 0; i < 5; i++) {
+
+    vertices.push(new THREE.Vector3());
+
+    scale = 1 + Math.random() * 0.3;
+
+    vertices[vertices.length - 1].x *= scale;
+    vertices[vertices.length - 1].y *= scale;
+    vertices[vertices.length - 1].z *= scale;
+
+  }
+
+  geometry.morphTargets = [];
+  geometry.morphTargets.push({
+    name: "target1",
+    vertices: vertices
+  });
+
+};
+},{"three":8}],4:[function(require,module,exports){
 /**
  * @author mrdoob / http://mrdoob.com/
  */
@@ -464,7 +548,7 @@ module.exports = function(THREE) {
   return THREE.OBJLoader;
 };
 
-},{}],3:[function(require,module,exports){
+},{}],5:[function(require,module,exports){
 module.exports = function parse(params){
       var template = "uniform sampler2D sufis; \n" +
 "uniform sampler2D sufis2; \n" +
@@ -478,7 +562,7 @@ module.exports = function parse(params){
 "  vec4 f3 = texture2D(sufis3, vUv) * 10.0; \n" +
 "  vec4 mixture = (f * f2 * 2.0); \n" +
 "  if (mixture.x > 1.0) { \n" +
-"    // mixture = vec4(1.0, 1.0, 1.0, 1.0); \n" +
+"    // mixture = vec4(0.5, 0.5, 1.0, 1.0); \n" +
 "  } \n" +
 " \n" +
 "  gl_FragColor = mixture; \n" +
@@ -491,7 +575,7 @@ module.exports = function parse(params){
       return template
     };
 
-},{}],4:[function(require,module,exports){
+},{}],6:[function(require,module,exports){
 module.exports = function parse(params){
       var template = "uniform sampler2D sufis; \n" +
 "uniform sampler2D sufis2; \n" +
@@ -502,9 +586,9 @@ module.exports = function parse(params){
 "varying vec2 vUv; \n" +
 "void main() { \n" +
 "  vUv = uv; \n" +
-"  vec4 color = texture2D(sufis, uv) * 200.0; \n" +
-"  vec4 color2 = texture2D(sufis2, uv) * 0.5; \n" +
-"  vec4 color3 = 1.0 - texture2D(sufis3, uv) * 2.0; \n" +
+"  vec4 color = texture2D(sufis, uv) * 400.0; \n" +
+"  vec4 color2 = texture2D(sufis2, uv) * 0.8; \n" +
+"  vec4 color3 = 1.0 - texture2D(sufis3, uv) * 5.0; \n" +
 " \n" +
 "  float depth = (position * color2.r).x * scale; \n" +
 "  float amp = 1.0 - ((position * color.b).z) * 20.0; \n" +
@@ -520,7 +604,7 @@ module.exports = function parse(params){
       return template
     };
 
-},{}],5:[function(require,module,exports){
+},{}],7:[function(require,module,exports){
 (function (global){
 /**
  * @license
@@ -12875,7 +12959,7 @@ module.exports = function parse(params){
 }.call(this));
 
 }).call(this,typeof global !== "undefined" ? global : typeof self !== "undefined" ? self : typeof window !== "undefined" ? window : {})
-},{}],6:[function(require,module,exports){
+},{}],8:[function(require,module,exports){
 var self = self || {};// File:src/Three.js
 
 /**
