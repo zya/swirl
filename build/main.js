@@ -118,9 +118,9 @@ function animate() {
 animate();
 },{"./lib/envMaps":2,"./lib/generateMorphTargets":3,"./lib/objLoader":4,"./lib/shaders/fragment.frag":5,"./lib/shaders/vertex.vert":6,"lodash":7,"three":8}],2:[function(require,module,exports){
 var THREE = require('three');
-var maps = (function () {
+var maps = (function() {
 
-  var path = "../images/cubemap/";
+  var path = '/images/cubemap/';
   var format = '.jpg';
   var urls = [
     path + 'px' + format, path + 'nx' + format,
@@ -144,6 +144,7 @@ var maps = (function () {
 })();
 
 module.exports = maps;
+
 },{"three":8}],3:[function(require,module,exports){
 var THREE = require('three');
 
