@@ -20,7 +20,7 @@ var renderer = new THREE.WebGLRenderer({
 renderer.setSize(window.innerWidth, window.innerHeight);
 document.body.appendChild(renderer.domElement);
 
-renderer.domElement.addEventListener('mousemove', function(event) {
+renderer.domElement.addEventListener('mousemove', function (event) {
   event.preventDefault();
   mouseX = (event.clientX - window.innerWidth / 2);
   mouseY = (event.clientY - window.innerHeight / 2);
@@ -29,9 +29,10 @@ renderer.domElement.addEventListener('mousemove', function(event) {
 var scene = new THREE.Scene();
 
 var camera = new THREE.PerspectiveCamera(75, window.innerWidth / window.innerHeight, 1, 10000);
-camera.position.z = 1600;
+camera.position.z = 1700;
+camera.position.y = 150;
 
-var geometry = new THREE.PlaneBufferGeometry(1600, 900, 150, 150);
+var geometry = new THREE.PlaneBufferGeometry(1600, 1000, 150, 150);
 
 var video = document.getElementById('video');
 var video2 = document.getElementById('video2');
@@ -77,32 +78,32 @@ var material = new THREE.ShaderMaterial({
 var ambient = new THREE.AmbientLight(0xffffff);
 scene.add(ambient);
 
-loader.load('./objects/nas-1.obj', function(object) {
+loader.load('./objects/moala.obj', function (object) {
   thing = object.children[0];
   morpher(thing.geometry);
   thing.updateMorphTargets();
-  scene.add(thing);
 
   thing.material = new THREE.MeshLambertMaterial({
     envMap: maps.reflection,
     morphTargets: true,
-    specular: 0x009900,
     shininess: 10,
     wireframe: false
   });
-  thing.position.x = -1400;
-  thing.position.y = -600;
-  thing.position.z = 190;
-  thing.scale.x = 2.8;
-  thing.scale.y = 2.8;
+  thing.position.x = -500;
+  thing.position.y = -200;
+  thing.position.z = 900;
+  thing.scale.x = 0.4;
+  thing.scale.y = 0.4;
+  thing.scale.z = 0.5;
   scene.add(thing);
 });
 
-document.addEventListener('mousemove', function(event) {
+document.addEventListener('mousemove', function (event) {
   mouseX = (event.clientX - windowHalfX) * 1.05;
   mouseY = (event.clientY - windowHalfY) * 1.5;
 });
 var mesh = new THREE.Mesh(geometry, material);
+mesh.position.x = -200;
 scene.add(mesh);
 
 function animate() {
