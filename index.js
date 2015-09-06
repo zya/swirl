@@ -9,10 +9,12 @@ var camera = require('./lib/camera');
 var loadSound = require('./lib/loadSound');
 var getAmp = require('./lib/calculateAmp');
 
+window.AudioContext = window.AudioContext || window.webkitAudioContext || window.mozAudioContext || window.oAudioContext;
 var context = new AudioContext();
 var analyser = context.createAnalyser();
+analyser.connect(context.destination);
 analyser.fftSize = 256;
-analyser.smoothingTimeConstant = 0.5;
+analyser.smoothingTimeConstant = 0.7;
 
 var audioData = new Uint8Array(analyser.frequencyBinCount);
 var buffer;
@@ -98,21 +100,21 @@ loadSound(context, './audio/zya.mp3', function (audiobuffer) {
   var src = context.createBufferSource();
   src.buffer = buffer;
   src.connect(analyser);
-  src.connect(context.destination);
-  src.start();
+  src.start(0);
 });
 
 setInterval(function () {
-  analyser.getByteFrequencyData(audioData);
+
 }, 50);
 
 function animate() {
   requestAnimationFrame(animate);
   camera.position.x += (mouseX - camera.position.x) * 0.005;
   camera.position.y += (-mouseY - camera.position.y) * 0.009;
+  analyser.getByteFrequencyData(audioData);
   camera.lookAt(scene.position);
   var audioAmp = getAmp(audioData);
-  material.uniforms.scale.value = scale(audioAmp, 80, 120, 0.6, 1.4);
+  material.uniforms.scale.value = scale(audioAmp, 80, 120, 0.8, 1.6);
   renderer.render(scene, camera);
 }
 
