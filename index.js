@@ -2,12 +2,16 @@ var THREE = require('three');
 THREE.OBJLoader = require('./lib/objLoader');
 var dynamics = require('dynamics.js');
 var loader = new THREE.OBJLoader();
+
 var scale = require('./lib/scale');
 var mesh = require('./lib/mesh').mesh;
 var material = require('./lib/mesh').material;
 var camera = require('./lib/camera');
 var loadSound = require('./lib/loadSound');
 var getAmp = require('./lib/calculateAmp');
+var canvasOnClickEvent = require('./lib/canvasOnClick');
+var playEvent = require('./lib/events').play;
+var pauseEvent = require('./lib/events').pause;
 
 window.AudioContext = window.AudioContext || window.webkitAudioContext || window.mozAudioContext || window.oAudioContext;
 var context = new AudioContext();
@@ -16,16 +20,21 @@ analyser.connect(context.destination);
 analyser.fftSize = 256;
 analyser.smoothingTimeConstant = 0.7;
 
+var play = document.getElementById('play');
+var pause = document.getElementById('pause');
+
 var audioData = new Uint8Array(analyser.frequencyBinCount);
 var buffer;
+var src;
+var playTime = 0;
+var pauseTime = 0;
+var firstTime = true;
 
 var mouseX = 0;
 var mouseY = 0;
 var windowHalfX = window.innerWidth / 2;
 var windowHalfY = window.innerHeight / 2;
-var initialXScale = mesh.scale.x;
-var initialYScale = mesh.scale.y;
-var initialZScale = mesh.scale.z;
+var spinner = document.getElementById('spin');
 
 var renderer = new THREE.WebGLRenderer({
   antialias: false,
@@ -47,47 +56,7 @@ document.addEventListener('mousemove', function (event) {
   mouseY = (event.clientY - windowHalfY) * 1.08;
 });
 
-document.addEventListener('click', function () {
-  dynamics.animate(material.uniforms.multi, {
-    value: 1.2
-  }, {
-    type: dynamics.spring,
-    duration: 700,
-    friction: 346,
-    anticipationSize: 124,
-    anticipationStrength: 247
-  });
-
-  dynamics.animate(mesh.scale, {
-    x: initialXScale + 0.5,
-    y: initialYScale + 0.5,
-    z: initialZScale + 0.5
-  }, {
-    type: dynamics.spring,
-    duration: 700,
-    friction: 346,
-    anticipationSize: 124,
-    anticipationStrength: 247
-  });
-
-  setTimeout(function () {
-    dynamics.animate(material.uniforms.multi, {
-      value: 1
-    }, {
-      type: dynamics.spring,
-      duration: 90,
-    });
-
-    dynamics.animate(mesh.scale, {
-      x: initialXScale,
-      y: initialYScale,
-      z: initialZScale
-    }, {
-      type: dynamics.spring,
-      duration: 900
-    });
-  }, 900);
-});
+renderer.domElement.addEventListener('click', canvasOnClickEvent);
 
 window.addEventListener('resize', function () {
   camera.aspect = window.innerWidth / window.innerHeight;
@@ -97,15 +66,63 @@ window.addEventListener('resize', function () {
 
 loadSound(context, './audio/zya.mp3', function (audiobuffer) {
   buffer = audiobuffer;
-  var src = context.createBufferSource();
-  src.buffer = buffer;
-  src.connect(analyser);
-  src.start(0);
+
+  play.style.visibility = 'visible';
+  dynamics.animate(spinner, {
+    opacity: 0
+  }, {
+    duration: 1000
+  });
+
+  setTimeout(function () {
+    dynamics.animate(play, {
+      opacity: 1
+    }, {
+      duration: 1000
+    });
+
+    play.addEventListener('click', function () {
+      renderer.domElement.style.visibility = 'visible';
+      pause.style.visibility = 'visible';
+      pause.style.opacity = 1;
+      play.style.visibility = 'hidden';
+
+      if (firstTime) {
+        dynamics.animate(renderer.domElement, {
+          opacity: 1
+        }, {
+          duration: 3000
+        });
+        setTimeout(function () {
+          playTime = context.currentTime;
+          firstTime = false;
+          src = context.createBufferSource();
+          src.connect(analyser);
+          src.buffer = buffer;
+          src.start(0);
+          console.log('playing at', playTime);
+
+        }, 1000);
+      } else {
+        var offset = pauseTime - playTime;
+        src = context.createBufferSource();
+        src.connect(analyser);
+        src.buffer = buffer;
+        src.start(0, offset);
+        playTime = context.currentTime;
+      }
+    });
+
+    pause.addEventListener('click', function () {
+      pauseTime = context.currentTime;
+      console.log('pausing at', pauseTime);
+      pause.style.visibility = 'hidden';
+      play.style.visibility = 'visible';
+      src.stop(0);
+    });
+
+  }, 1100);
 });
-
-setInterval(function () {
-
-}, 50);
 
 function animate() {
   requestAnimationFrame(animate);

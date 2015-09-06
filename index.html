@@ -18,11 +18,84 @@
     z-index: -4;
     /*display: none;*/
   }
+  #text{
+    text-align: center;
+    position: fixed;
+    bottom:  15vh;
+    color: white;
+    width: 100%;
+    z-index: 20;
+    font-size: 2.5vh;
+    font-family: 'Inconsolata', sans-serif;
+    padding: 0;
+    margin:0;
+    margin-left: 2px;
+    /*font-weight: 700;*/
+  }
+  #spin{
+    bottom:  9vh;
+    position: fixed;
+    text-align: center;
+    width: 100%;
+    z-index: 20;
+    color: white;
+    font-size: 4vh;
+    padding: 0;
+    margin:0;
+  }
+
+  #play{
+    bottom:  9.3vh;
+    position: fixed;
+    text-align: center;
+    width: 100%;
+    z-index: 20;
+    color: white;
+    font-size: 3.2vh;
+    padding: 0;
+    margin:0;
+    opacity: 0;
+    visibility: hidden;
+  }
+
+  #pause{
+    bottom:  9.3vh;
+    position: fixed;
+    text-align: center;
+    width: 100%;
+    z-index: 20;
+    color: white;
+    font-size: 3.1vh;
+    padding: 0;
+    margin:0;
+    opacity: 0;
+    visibility: hidden;
+  }
+
+  #play:hover {
+    cursor: pointer;
+  }
+
+  #pause:hover {
+    cursor: pointer;
+  }
+  
+  canvas {
+    opacity: 0;
+    visibility: hidden;
+  }
+
   </style>
+  <link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/font-awesome/4.4.0/css/font-awesome.min.css">
+  <link href='https://fonts.googleapis.com/css?family=Arimo:400,700|Noto+Sans|Inconsolata' rel='stylesheet' type='text/css'>
 </head>
 <body>
   <video id='video2' src='./images/sufis-new-short.mov' autoplay loop style="display:none" mute></video>
   <video id='video' src='./images/black.mov' autoplay loop mute></video>
+  <div id='text'>ZYA-SWIRL</div>
+  <div id='spin'><i class="fa fa-circle-o-notch fa-spin"></i></div>
+  <div id='play'><i class="fa fa-play" id='icon'></i></div>
+  <div id='pause'><i class="fa fa-pause" id='icon'></i></div>
 </body>
 <script type="text/javascript" src='./build/main.js'></script>
 </html>

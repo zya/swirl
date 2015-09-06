@@ -3,12 +3,16 @@ var THREE = require('three');
 THREE.OBJLoader = require('./lib/objLoader');
 var dynamics = require('dynamics.js');
 var loader = new THREE.OBJLoader();
+
 var scale = require('./lib/scale');
 var mesh = require('./lib/mesh').mesh;
 var material = require('./lib/mesh').material;
 var camera = require('./lib/camera');
 var loadSound = require('./lib/loadSound');
 var getAmp = require('./lib/calculateAmp');
+var canvasOnClickEvent = require('./lib/canvasOnClick');
+var playEvent = require('./lib/events').play;
+var pauseEvent = require('./lib/events').pause;
 
 window.AudioContext = window.AudioContext || window.webkitAudioContext || window.mozAudioContext || window.oAudioContext;
 var context = new AudioContext();
@@ -17,16 +21,21 @@ analyser.connect(context.destination);
 analyser.fftSize = 256;
 analyser.smoothingTimeConstant = 0.7;
 
+var play = document.getElementById('play');
+var pause = document.getElementById('pause');
+
 var audioData = new Uint8Array(analyser.frequencyBinCount);
 var buffer;
+var src;
+var playTime = 0;
+var pauseTime = 0;
+var firstTime = true;
 
 var mouseX = 0;
 var mouseY = 0;
 var windowHalfX = window.innerWidth / 2;
 var windowHalfY = window.innerHeight / 2;
-var initialXScale = mesh.scale.x;
-var initialYScale = mesh.scale.y;
-var initialZScale = mesh.scale.z;
+var spinner = document.getElementById('spin');
 
 var renderer = new THREE.WebGLRenderer({
   antialias: false,
@@ -48,7 +57,113 @@ document.addEventListener('mousemove', function (event) {
   mouseY = (event.clientY - windowHalfY) * 1.08;
 });
 
-document.addEventListener('click', function () {
+renderer.domElement.addEventListener('click', canvasOnClickEvent);
+
+window.addEventListener('resize', function () {
+  camera.aspect = window.innerWidth / window.innerHeight;
+  camera.updateProjectionMatrix();
+  renderer.setSize(window.innerWidth, window.innerHeight);
+}, false);
+
+loadSound(context, './audio/zya.mp3', function (audiobuffer) {
+  buffer = audiobuffer;
+
+  play.style.visibility = 'visible';
+  dynamics.animate(spinner, {
+    opacity: 0
+  }, {
+    duration: 1000
+  });
+
+  setTimeout(function () {
+    dynamics.animate(play, {
+      opacity: 1
+    }, {
+      duration: 1000
+    });
+
+    play.addEventListener('click', function () {
+      renderer.domElement.style.visibility = 'visible';
+      pause.style.visibility = 'visible';
+      pause.style.opacity = 1;
+      play.style.visibility = 'hidden';
+
+      if (firstTime) {
+        dynamics.animate(renderer.domElement, {
+          opacity: 1
+        }, {
+          duration: 3000
+        });
+        setTimeout(function () {
+          playTime = context.currentTime;
+          firstTime = false;
+          src = context.createBufferSource();
+          src.connect(analyser);
+          src.buffer = buffer;
+          src.start(0);
+          console.log('playing at', playTime);
+
+        }, 1000);
+      } else {
+        var offset = pauseTime - playTime;
+        src = context.createBufferSource();
+        src.connect(analyser);
+        src.buffer = buffer;
+        src.start(0, offset);
+        playTime = context.currentTime;
+      }
+    });
+
+    pause.addEventListener('click', function () {
+      pauseTime = context.currentTime;
+      console.log('pausing at', pauseTime);
+      pause.style.visibility = 'hidden';
+      play.style.visibility = 'visible';
+      src.stop(0);
+    });
+
+  }, 1100);
+});
+
+function animate() {
+  requestAnimationFrame(animate);
+  camera.position.x += (mouseX - camera.position.x) * 0.005;
+  camera.position.y += (-mouseY - camera.position.y) * 0.009;
+  analyser.getByteFrequencyData(audioData);
+  camera.lookAt(scene.position);
+  var audioAmp = getAmp(audioData);
+  material.uniforms.scale.value = scale(audioAmp, 80, 120, 0.8, 1.6);
+  renderer.render(scene, camera);
+}
+
+animate();
+},{"./lib/calculateAmp":2,"./lib/camera":3,"./lib/canvasOnClick":4,"./lib/events":5,"./lib/loadSound":6,"./lib/mesh":7,"./lib/objLoader":8,"./lib/scale":9,"dynamics.js":12,"three":13}],2:[function(require,module,exports){
+module.exports = function (audioArray) {
+  var total = 0;
+  for (var i = 3; i < audioArray.length - audioArray.length / 3; i += 2) {
+    total += audioArray[i];
+  }
+  var avg = total / (audioArray.length / 3);
+  return avg;
+};
+},{}],3:[function(require,module,exports){
+var THREE = require('three');
+
+var camera = new THREE.PerspectiveCamera(75, window.innerWidth / window.innerHeight, 1, 10000);
+camera.position.z = 1300;
+camera.position.y = 150;
+
+module.exports = camera;
+},{"three":13}],4:[function(require,module,exports){
+var dynamics = require('dynamics.js');
+var material = require('./mesh').material;
+var mesh = require('./mesh').mesh;
+
+var initialXScale = mesh.scale.x;
+var initialYScale = mesh.scale.y;
+var initialZScale = mesh.scale.z;
+
+module.exports = function () {
   dynamics.animate(material.uniforms.multi, {
     value: 1.2
   }, {
@@ -88,56 +203,61 @@ document.addEventListener('click', function () {
       duration: 900
     });
   }, 900);
-});
-
-window.addEventListener('resize', function () {
-  camera.aspect = window.innerWidth / window.innerHeight;
-  camera.updateProjectionMatrix();
-  renderer.setSize(window.innerWidth, window.innerHeight);
-}, false);
-
-loadSound(context, './audio/zya.mp3', function (audiobuffer) {
-  buffer = audiobuffer;
-  var src = context.createBufferSource();
-  src.buffer = buffer;
-  src.connect(analyser);
-  src.start(0);
-});
-
-setInterval(function () {
-
-}, 50);
-
-function animate() {
-  requestAnimationFrame(animate);
-  camera.position.x += (mouseX - camera.position.x) * 0.005;
-  camera.position.y += (-mouseY - camera.position.y) * 0.009;
-  analyser.getByteFrequencyData(audioData);
-  camera.lookAt(scene.position);
-  var audioAmp = getAmp(audioData);
-  material.uniforms.scale.value = scale(audioAmp, 80, 120, 0.8, 1.6);
-  renderer.render(scene, camera);
-}
-
-animate();
-},{"./lib/calculateAmp":2,"./lib/camera":3,"./lib/loadSound":4,"./lib/mesh":5,"./lib/objLoader":6,"./lib/scale":7,"dynamics.js":10,"three":11}],2:[function(require,module,exports){
-module.exports = function (audioArray) {
-  var total = 0;
-  for (var i = 3; i < audioArray.length - audioArray.length / 3; i += 2) {
-    total += audioArray[i];
-  }
-  var avg = total / (audioArray.length / 3);
-  return avg;
 };
-},{}],3:[function(require,module,exports){
-var THREE = require('three');
+},{"./mesh":7,"dynamics.js":12}],5:[function(require,module,exports){
+var dynamics = require('dynamics.js');
 
-var camera = new THREE.PerspectiveCamera(75, window.innerWidth / window.innerHeight, 1, 10000);
-camera.position.z = 1100;
-camera.position.y = 150;
+var play = document.getElementById('play');
+var pause = document.getElementById('pause');
 
-module.exports = camera;
-},{"three":11}],4:[function(require,module,exports){
+var playTime = 0;
+var pauseTime = 0;
+var firstTime = true;
+
+module.exports.play = function (context, analyser, renderElement, src, buffer) {
+  return function () {
+    renderElement.style.visibility = 'visible';
+    pause.style.visibility = 'visible';
+    pause.style.opacity = 1;
+    play.style.visibility = 'hidden';
+
+    if (firstTime) {
+      dynamics.animate(renderElement, {
+        opacity: 1
+      }, {
+        duration: 3000
+      });
+      setTimeout(function () {
+        playTime = context.currentTime;
+        firstTime = false;
+        src = context.createBufferSource();
+        src.connect(analyser);
+        src.buffer = buffer;
+        src.start(0);
+        console.log('playing at', playTime);
+
+      }, 1000);
+    } else {
+      var offset = pauseTime - playTime;
+      src = context.createBufferSource();
+      src.connect(analyser);
+      src.buffer = buffer;
+      src.start(0, offset);
+      playTime = context.currentTime;
+    }
+  };
+};
+
+module.exports.pause = function (context, src) {
+  return function () {
+    pauseTime = context.currentTime;
+    console.log('pausing at', pauseTime);
+    pause.style.visibility = 'hidden';
+    play.style.visibility = 'visible';
+    src.stop(0);
+  };
+};
+},{"dynamics.js":12}],6:[function(require,module,exports){
 module.exports = function (context, path, success, failure) {
   var request = new XMLHttpRequest();
   request.open('GET', path, true);
@@ -148,7 +268,7 @@ module.exports = function (context, path, success, failure) {
   request.onerror = failure;
   request.send();
 };
-},{}],5:[function(require,module,exports){
+},{}],7:[function(require,module,exports){
 var THREE = require('three');
 
 var fs = require('./shaders/fragment.frag')();
@@ -162,7 +282,7 @@ var texture2 = new THREE.VideoTexture(video2);
 texture.minFilter = THREE.LinearFilter;
 texture2.minFilter = THREE.LinearFilter;
 
-var geometry = new THREE.PlaneBufferGeometry(1550, 1000, 110, 110);
+var geometry = new THREE.PlaneBufferGeometry(1550, 1000, 130, 130);
 
 var uniforms = {
   sufis: {
@@ -196,7 +316,7 @@ mesh.rotation.y = 0.2;
 
 module.exports.mesh = mesh;
 module.exports.material = material;
-},{"./shaders/fragment.frag":8,"./shaders/vertex.vert":9,"three":11}],6:[function(require,module,exports){
+},{"./shaders/fragment.frag":10,"./shaders/vertex.vert":11,"three":13}],8:[function(require,module,exports){
 /**
  * @author mrdoob / http://mrdoob.com/
  */
@@ -416,11 +536,11 @@ THREE.OBJLoader.prototype = {
 module.exports = function () {
   return THREE.OBJLoader;
 };
-},{"three":11}],7:[function(require,module,exports){
+},{"three":13}],9:[function(require,module,exports){
 module.exports = function (value, istart, istop, ostart, ostop) {
   return ostart + (ostop - ostart) * ((value - istart) / (istop - istart));
 };
-},{}],8:[function(require,module,exports){
+},{}],10:[function(require,module,exports){
 module.exports = function parse(params){
       var template = "uniform sampler2D sufis; \n" +
 "uniform sampler2D sufis2; \n" +
@@ -445,7 +565,7 @@ module.exports = function parse(params){
       return template
     };
 
-},{}],9:[function(require,module,exports){
+},{}],11:[function(require,module,exports){
 module.exports = function parse(params){
       var template = "uniform sampler2D sufis; \n" +
 "uniform sampler2D sufis2; \n" +
@@ -475,7 +595,7 @@ module.exports = function parse(params){
       return template
     };
 
-},{}],10:[function(require,module,exports){
+},{}],12:[function(require,module,exports){
 // Generated by CoffeeScript 1.7.1
 (function() {
   var Color, DecomposedMatrix, DecomposedMatrix2D, InterpolableArray, InterpolableColor, InterpolableObject, InterpolableWithUnit, Matrix, Matrix2D, Set, Vector, addTimeout, animationTick, animations, animationsTimeouts, applyDefaults, applyFrame, applyProperties, baseSVG, cacheFn, cancelTimeout, clone, createInterpolable, defaultValueForKey, degProperties, dynamics, getCurrentProperties, interpolate, isDocumentVisible, isSVGElement, lastTime, leftDelayForTimeout, makeArrayFn, observeVisibilityChange, parseProperties, prefixFor, propertyWithPrefix, pxProperties, rAF, roundf, runLoopPaused, runLoopRunning, runLoopTick, setRealTimeout, slow, slowRatio, startAnimation, startRunLoop, svgProperties, timeBeforeVisibilityChange, timeoutLastId, timeouts, toDashed, transformProperties, transformValueForProperty, unitForProperty,
@@ -2464,7 +2584,7 @@ module.exports = function parse(params){
 
 }).call(this);
 
-},{}],11:[function(require,module,exports){
+},{}],13:[function(require,module,exports){
 var self = self || {};// File:src/Three.js
 
 /**
