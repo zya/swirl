@@ -10,8 +10,6 @@ var camera = require('./lib/camera');
 var loadSound = require('./lib/loadSound');
 var getAmp = require('./lib/calculateAmp');
 var canvasOnClickEvent = require('./lib/canvasOnClick');
-var playEvent = require('./lib/events').play;
-var pauseEvent = require('./lib/events').pause;
 
 window.AudioContext = window.AudioContext || window.webkitAudioContext || window.mozAudioContext || window.oAudioContext;
 var context = new AudioContext();
@@ -64,6 +62,17 @@ window.addEventListener('resize', function () {
   renderer.setSize(window.innerWidth, window.innerHeight);
 }, false);
 
+function audioEnded() {
+  pause.style.visibility = 'hidden';
+  play.style.visibility = 'visible';
+  firstTime = true;
+  dynamics.animate(renderer.domElement, {
+    opacity: 0
+  }, {
+    duration: 3000
+  });
+}
+
 loadSound(context, './audio/zya.mp3', function (audiobuffer) {
   buffer = audiobuffer;
 
@@ -91,7 +100,7 @@ loadSound(context, './audio/zya.mp3', function (audiobuffer) {
         dynamics.animate(renderer.domElement, {
           opacity: 1
         }, {
-          duration: 3000
+          duration: 4000
         });
         setTimeout(function () {
           playTime = context.currentTime;
@@ -99,23 +108,22 @@ loadSound(context, './audio/zya.mp3', function (audiobuffer) {
           src = context.createBufferSource();
           src.connect(analyser);
           src.buffer = buffer;
+          src.onended = audioEnded;
           src.start(0);
-          console.log('playing at', playTime);
-
-        }, 1000);
+        }, 1500);
       } else {
         var offset = pauseTime - playTime;
         src = context.createBufferSource();
         src.connect(analyser);
         src.buffer = buffer;
         src.start(0, offset);
+        src.onended = audioEnded;
         playTime = context.currentTime;
       }
     });
 
     pause.addEventListener('click', function () {
       pauseTime = context.currentTime;
-      console.log('pausing at', pauseTime);
       pause.style.visibility = 'hidden';
       play.style.visibility = 'visible';
       src.stop(0);

@@ -11,8 +11,6 @@ var camera = require('./lib/camera');
 var loadSound = require('./lib/loadSound');
 var getAmp = require('./lib/calculateAmp');
 var canvasOnClickEvent = require('./lib/canvasOnClick');
-var playEvent = require('./lib/events').play;
-var pauseEvent = require('./lib/events').pause;
 
 window.AudioContext = window.AudioContext || window.webkitAudioContext || window.mozAudioContext || window.oAudioContext;
 var context = new AudioContext();
@@ -65,6 +63,17 @@ window.addEventListener('resize', function () {
   renderer.setSize(window.innerWidth, window.innerHeight);
 }, false);
 
+function audioEnded() {
+  pause.style.visibility = 'hidden';
+  play.style.visibility = 'visible';
+  firstTime = true;
+  dynamics.animate(renderer.domElement, {
+    opacity: 0
+  }, {
+    duration: 3000
+  });
+}
+
 loadSound(context, './audio/zya.mp3', function (audiobuffer) {
   buffer = audiobuffer;
 
@@ -92,7 +101,7 @@ loadSound(context, './audio/zya.mp3', function (audiobuffer) {
         dynamics.animate(renderer.domElement, {
           opacity: 1
         }, {
-          duration: 3000
+          duration: 4000
         });
         setTimeout(function () {
           playTime = context.currentTime;
@@ -100,23 +109,22 @@ loadSound(context, './audio/zya.mp3', function (audiobuffer) {
           src = context.createBufferSource();
           src.connect(analyser);
           src.buffer = buffer;
+          src.onended = audioEnded;
           src.start(0);
-          console.log('playing at', playTime);
-
-        }, 1000);
+        }, 1500);
       } else {
         var offset = pauseTime - playTime;
         src = context.createBufferSource();
         src.connect(analyser);
         src.buffer = buffer;
         src.start(0, offset);
+        src.onended = audioEnded;
         playTime = context.currentTime;
       }
     });
 
     pause.addEventListener('click', function () {
       pauseTime = context.currentTime;
-      console.log('pausing at', pauseTime);
       pause.style.visibility = 'hidden';
       play.style.visibility = 'visible';
       src.stop(0);
@@ -137,7 +145,7 @@ function animate() {
 }
 
 animate();
-},{"./lib/calculateAmp":2,"./lib/camera":3,"./lib/canvasOnClick":4,"./lib/events":5,"./lib/loadSound":6,"./lib/mesh":7,"./lib/objLoader":8,"./lib/scale":9,"dynamics.js":12,"three":13}],2:[function(require,module,exports){
+},{"./lib/calculateAmp":2,"./lib/camera":3,"./lib/canvasOnClick":4,"./lib/loadSound":5,"./lib/mesh":6,"./lib/objLoader":7,"./lib/scale":8,"dynamics.js":11,"three":12}],2:[function(require,module,exports){
 module.exports = function (audioArray) {
   var total = 0;
   for (var i = 3; i < audioArray.length - audioArray.length / 3; i += 2) {
@@ -154,7 +162,7 @@ camera.position.z = 1300;
 camera.position.y = 150;
 
 module.exports = camera;
-},{"three":13}],4:[function(require,module,exports){
+},{"three":12}],4:[function(require,module,exports){
 var dynamics = require('dynamics.js');
 var material = require('./mesh').material;
 var mesh = require('./mesh').mesh;
@@ -162,38 +170,32 @@ var mesh = require('./mesh').mesh;
 var initialXScale = mesh.scale.x;
 var initialYScale = mesh.scale.y;
 var initialZScale = mesh.scale.z;
+var count = 1;
 
 module.exports = function () {
-  dynamics.animate(material.uniforms.multi, {
-    value: 1.2
-  }, {
-    type: dynamics.spring,
-    duration: 700,
-    friction: 346,
-    anticipationSize: 124,
-    anticipationStrength: 247
-  });
-
-  dynamics.animate(mesh.scale, {
-    x: initialXScale + 0.5,
-    y: initialYScale + 0.5,
-    z: initialZScale + 0.5
-  }, {
-    type: dynamics.spring,
-    duration: 700,
-    friction: 346,
-    anticipationSize: 124,
-    anticipationStrength: 247
-  });
-
-  setTimeout(function () {
-    dynamics.animate(material.uniforms.multi, {
-      value: 1
+  if (count % 2) {
+    dynamics.animate(mesh.scale, {
+      x: initialXScale + 0.5,
+      y: initialYScale + 0.5,
+      z: initialZScale + 0.5
     }, {
       type: dynamics.spring,
-      duration: 90,
+      duration: 700,
+      friction: 346,
+      anticipationSize: 124,
+      anticipationStrength: 247
     });
 
+    dynamics.animate(material.uniforms.multi, {
+      value: 1.2
+    }, {
+      type: dynamics.spring,
+      duration: 700,
+      friction: 346,
+      anticipationSize: 124,
+      anticipationStrength: 247
+    });
+  } else {
     dynamics.animate(mesh.scale, {
       x: initialXScale,
       y: initialYScale,
@@ -202,62 +204,18 @@ module.exports = function () {
       type: dynamics.spring,
       duration: 900
     });
-  }, 900);
+
+    dynamics.animate(material.uniforms.multi, {
+      value: 1
+    }, {
+      type: dynamics.spring,
+      duration: 90,
+    });
+  }
+
+  count++;
 };
-},{"./mesh":7,"dynamics.js":12}],5:[function(require,module,exports){
-var dynamics = require('dynamics.js');
-
-var play = document.getElementById('play');
-var pause = document.getElementById('pause');
-
-var playTime = 0;
-var pauseTime = 0;
-var firstTime = true;
-
-module.exports.play = function (context, analyser, renderElement, src, buffer) {
-  return function () {
-    renderElement.style.visibility = 'visible';
-    pause.style.visibility = 'visible';
-    pause.style.opacity = 1;
-    play.style.visibility = 'hidden';
-
-    if (firstTime) {
-      dynamics.animate(renderElement, {
-        opacity: 1
-      }, {
-        duration: 3000
-      });
-      setTimeout(function () {
-        playTime = context.currentTime;
-        firstTime = false;
-        src = context.createBufferSource();
-        src.connect(analyser);
-        src.buffer = buffer;
-        src.start(0);
-        console.log('playing at', playTime);
-
-      }, 1000);
-    } else {
-      var offset = pauseTime - playTime;
-      src = context.createBufferSource();
-      src.connect(analyser);
-      src.buffer = buffer;
-      src.start(0, offset);
-      playTime = context.currentTime;
-    }
-  };
-};
-
-module.exports.pause = function (context, src) {
-  return function () {
-    pauseTime = context.currentTime;
-    console.log('pausing at', pauseTime);
-    pause.style.visibility = 'hidden';
-    play.style.visibility = 'visible';
-    src.stop(0);
-  };
-};
-},{"dynamics.js":12}],6:[function(require,module,exports){
+},{"./mesh":6,"dynamics.js":11}],5:[function(require,module,exports){
 module.exports = function (context, path, success, failure) {
   var request = new XMLHttpRequest();
   request.open('GET', path, true);
@@ -268,7 +226,7 @@ module.exports = function (context, path, success, failure) {
   request.onerror = failure;
   request.send();
 };
-},{}],7:[function(require,module,exports){
+},{}],6:[function(require,module,exports){
 var THREE = require('three');
 
 var fs = require('./shaders/fragment.frag')();
@@ -312,11 +270,11 @@ var material = new THREE.ShaderMaterial({
 
 var mesh = new THREE.Mesh(geometry, material);
 mesh.position.x = -50;
-mesh.rotation.y = 0.2;
+mesh.rotation.y = 0.3;
 
 module.exports.mesh = mesh;
 module.exports.material = material;
-},{"./shaders/fragment.frag":10,"./shaders/vertex.vert":11,"three":13}],8:[function(require,module,exports){
+},{"./shaders/fragment.frag":9,"./shaders/vertex.vert":10,"three":12}],7:[function(require,module,exports){
 /**
  * @author mrdoob / http://mrdoob.com/
  */
@@ -536,11 +494,11 @@ THREE.OBJLoader.prototype = {
 module.exports = function () {
   return THREE.OBJLoader;
 };
-},{"three":13}],9:[function(require,module,exports){
+},{"three":12}],8:[function(require,module,exports){
 module.exports = function (value, istart, istop, ostart, ostop) {
   return ostart + (ostop - ostart) * ((value - istart) / (istop - istart));
 };
-},{}],10:[function(require,module,exports){
+},{}],9:[function(require,module,exports){
 module.exports = function parse(params){
       var template = "uniform sampler2D sufis; \n" +
 "uniform sampler2D sufis2; \n" +
@@ -565,7 +523,7 @@ module.exports = function parse(params){
       return template
     };
 
-},{}],11:[function(require,module,exports){
+},{}],10:[function(require,module,exports){
 module.exports = function parse(params){
       var template = "uniform sampler2D sufis; \n" +
 "uniform sampler2D sufis2; \n" +
@@ -595,7 +553,7 @@ module.exports = function parse(params){
       return template
     };
 
-},{}],12:[function(require,module,exports){
+},{}],11:[function(require,module,exports){
 // Generated by CoffeeScript 1.7.1
 (function() {
   var Color, DecomposedMatrix, DecomposedMatrix2D, InterpolableArray, InterpolableColor, InterpolableObject, InterpolableWithUnit, Matrix, Matrix2D, Set, Vector, addTimeout, animationTick, animations, animationsTimeouts, applyDefaults, applyFrame, applyProperties, baseSVG, cacheFn, cancelTimeout, clone, createInterpolable, defaultValueForKey, degProperties, dynamics, getCurrentProperties, interpolate, isDocumentVisible, isSVGElement, lastTime, leftDelayForTimeout, makeArrayFn, observeVisibilityChange, parseProperties, prefixFor, propertyWithPrefix, pxProperties, rAF, roundf, runLoopPaused, runLoopRunning, runLoopTick, setRealTimeout, slow, slowRatio, startAnimation, startRunLoop, svgProperties, timeBeforeVisibilityChange, timeoutLastId, timeouts, toDashed, transformProperties, transformValueForProperty, unitForProperty,
@@ -2584,7 +2542,7 @@ module.exports = function parse(params){
 
 }).call(this);
 
-},{}],13:[function(require,module,exports){
+},{}],12:[function(require,module,exports){
 var self = self || {};// File:src/Three.js
 
 /**
