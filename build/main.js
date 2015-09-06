@@ -7,6 +7,15 @@ var mesh = require('./lib/mesh').mesh;
 var material = require('./lib/mesh').material;
 var camera = require('./lib/camera');
 var loadSound = require('./lib/loadSound');
+var getAmp = require('./lib/calculateAmp');
+
+var context = new AudioContext();
+var analyser = context.createAnalyser();
+analyser.fftSize = 512;
+analyser.smoothingTimeConstant = 0.7;
+
+var audioData = new Uint8Array(analyser.frequencyBinCount);
+var buffer;
 
 var mouseX = 0;
 var mouseY = 0;
@@ -37,27 +46,47 @@ window.addEventListener('resize', function () {
   renderer.setSize(window.innerWidth, window.innerHeight);
 }, false);
 
+loadSound(context, './audio/zya.mp3', function (audiobuffer) {
+  buffer = audiobuffer;
+  var src = context.createBufferSource();
+  src.buffer = buffer;
+  src.connect(analyser);
+  src.connect(context.destination);
+  src.start();
+});
+
 function animate() {
   requestAnimationFrame(animate);
-  camera.position.x += (mouseX - camera.position.x) * 0.005;
-  camera.position.y += (-mouseY - camera.position.y) * 0.009;
+  camera.position.x += (mouseX - camera.position.x) * 0.05;
+  camera.position.y += (-mouseY - camera.position.y) * 0.09;
+  analyser.getByteFrequencyData(audioData);
   camera.lookAt(scene.position);
-
-  var sin = Math.sin(Date.now() * 0.002);
-  material.uniforms.scale.value = scale(sin, -1.0, 1.0, 0.8, 1.1);
+  var audioAmp = getAmp(audioData);
+  console.log(audioAmp);
+  material.uniforms.scale.value = scale(audioAmp, 80, 120, 0.8, 1.7);
   renderer.render(scene, camera);
 }
 
 animate();
-},{"./lib/camera":2,"./lib/loadSound":3,"./lib/mesh":4,"./lib/objLoader":5,"./lib/scale":6,"three":9}],2:[function(require,module,exports){
+},{"./lib/calculateAmp":2,"./lib/camera":3,"./lib/loadSound":4,"./lib/mesh":5,"./lib/objLoader":6,"./lib/scale":7,"three":10}],2:[function(require,module,exports){
+module.exports = function (audioArray) {
+  var total = 0;
+  for (var i = 3; i < audioArray.length - audioArray.length / 3; i += 2) {
+    total += audioArray[i];
+  }
+  var avg = total / (audioArray.length / 3);
+  return avg;
+};
+},{}],3:[function(require,module,exports){
 var THREE = require('three');
+
 var camera = new THREE.PerspectiveCamera(75, window.innerWidth / window.innerHeight, 1, 10000);
-camera.position.z = 1700;
+camera.position.z = 1500;
 camera.position.y = 150;
 
 module.exports = camera;
-},{"three":9}],3:[function(require,module,exports){
-module.exports.load = function (path, success, failure) {
+},{"three":10}],4:[function(require,module,exports){
+module.exports = function (context, path, success, failure) {
   var request = new XMLHttpRequest();
   request.open('GET', path, true);
   request.responseType = 'arraybuffer';
@@ -67,7 +96,7 @@ module.exports.load = function (path, success, failure) {
   request.onerror = failure;
   request.send();
 };
-},{}],4:[function(require,module,exports){
+},{}],5:[function(require,module,exports){
 var THREE = require('three');
 
 var fs = require('./shaders/fragment.frag')();
@@ -84,7 +113,7 @@ texture.minFilter = THREE.LinearFilter;
 texture2.minFilter = THREE.LinearFilter;
 texture3.minFilter = THREE.LinearFilter;
 
-var geometry = new THREE.PlaneBufferGeometry(1600, 1000, 150, 150);
+var geometry = new THREE.PlaneBufferGeometry(1550, 1000, 130, 150);
 
 var uniforms = {
   sufis: {
@@ -114,10 +143,11 @@ var material = new THREE.ShaderMaterial({
 
 var mesh = new THREE.Mesh(geometry, material);
 mesh.position.x = -200;
+mesh.rotation.y = 0.2;
 
 module.exports.mesh = mesh;
 module.exports.material = material;
-},{"./shaders/fragment.frag":7,"./shaders/vertex.vert":8,"three":9}],5:[function(require,module,exports){
+},{"./shaders/fragment.frag":8,"./shaders/vertex.vert":9,"three":10}],6:[function(require,module,exports){
 /**
  * @author mrdoob / http://mrdoob.com/
  */
@@ -337,11 +367,11 @@ THREE.OBJLoader.prototype = {
 module.exports = function () {
   return THREE.OBJLoader;
 };
-},{"three":9}],6:[function(require,module,exports){
+},{"three":10}],7:[function(require,module,exports){
 module.exports = function (value, istart, istop, ostart, ostop) {
   return ostart + (ostop - ostart) * ((value - istart) / (istop - istart));
 };
-},{}],7:[function(require,module,exports){
+},{}],8:[function(require,module,exports){
 module.exports = function parse(params){
       var template = "uniform sampler2D sufis; \n" +
 "uniform sampler2D sufis2; \n" +
@@ -352,7 +382,7 @@ module.exports = function parse(params){
 " \n" +
 "void main() { \n" +
 "  vec4 f = 1.0 - texture2D(sufis, vUv) * 1.3; \n" +
-"  vec4 f2 = 1.0 - texture2D(sufis2, vUv) * 1.6 * scale;  \n" +
+"  vec4 f2 = 1.0 - texture2D(sufis2, vUv) * 1.1 * scale;  \n" +
 "  vec4 f3 = texture2D(sufis3, vUv) * 10.0; \n" +
 "  vec4 mixture = (f * f2 * 4.0); \n" +
 "  if (mixture.x > 1.0) { \n" +
@@ -370,7 +400,7 @@ module.exports = function parse(params){
       return template
     };
 
-},{}],8:[function(require,module,exports){
+},{}],9:[function(require,module,exports){
 module.exports = function parse(params){
       var template = "uniform sampler2D sufis; \n" +
 "uniform sampler2D sufis2; \n" +
@@ -384,7 +414,7 @@ module.exports = function parse(params){
 "  vec4 color2 = texture2D(sufis2, uv) * 0.8; \n" +
 "  vec4 color3 = 1.0 - texture2D(sufis3, uv) * 5.0; \n" +
 " \n" +
-"  float depth = (position * color2.r).x * scale * 2.0; \n" +
+"  float depth = (position * color2.r).x * 2.0; \n" +
 "  float amp = 1.0 - ((position * color.b).z) * 10.0; \n" +
 "  float modulator = color3.x * 20.0; \n" +
 " \n" +
@@ -399,7 +429,7 @@ module.exports = function parse(params){
       return template
     };
 
-},{}],9:[function(require,module,exports){
+},{}],10:[function(require,module,exports){
 var self = self || {};// File:src/Three.js
 
 /**

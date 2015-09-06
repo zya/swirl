@@ -6,6 +6,15 @@ var mesh = require('./lib/mesh').mesh;
 var material = require('./lib/mesh').material;
 var camera = require('./lib/camera');
 var loadSound = require('./lib/loadSound');
+var getAmp = require('./lib/calculateAmp');
+
+var context = new AudioContext();
+var analyser = context.createAnalyser();
+analyser.fftSize = 512;
+analyser.smoothingTimeConstant = 0.7;
+
+var audioData = new Uint8Array(analyser.frequencyBinCount);
+var buffer;
 
 var mouseX = 0;
 var mouseY = 0;
@@ -36,14 +45,24 @@ window.addEventListener('resize', function () {
   renderer.setSize(window.innerWidth, window.innerHeight);
 }, false);
 
+loadSound(context, './audio/zya.mp3', function (audiobuffer) {
+  buffer = audiobuffer;
+  var src = context.createBufferSource();
+  src.buffer = buffer;
+  src.connect(analyser);
+  src.connect(context.destination);
+  src.start();
+});
+
 function animate() {
   requestAnimationFrame(animate);
-  camera.position.x += (mouseX - camera.position.x) * 0.005;
-  camera.position.y += (-mouseY - camera.position.y) * 0.009;
+  camera.position.x += (mouseX - camera.position.x) * 0.05;
+  camera.position.y += (-mouseY - camera.position.y) * 0.09;
+  analyser.getByteFrequencyData(audioData);
   camera.lookAt(scene.position);
-
-  var sin = Math.sin(Date.now() * 0.002);
-  material.uniforms.scale.value = scale(sin, -1.0, 1.0, 0.8, 1.1);
+  var audioAmp = getAmp(audioData);
+  console.log(audioAmp);
+  material.uniforms.scale.value = scale(audioAmp, 80, 120, 0.8, 1.7);
   renderer.render(scene, camera);
 }
 
