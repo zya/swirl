@@ -90,8 +90,14 @@
   <link href='https://fonts.googleapis.com/css?family=Arimo:400,700|Noto+Sans|Inconsolata' rel='stylesheet' type='text/css'>
 </head>
 <body>
-  <video id='video2' src='./images/sufis-new-short.mov' autoplay loop style="display:none" mute></video>
-  <video id='video' src='./images/black.mov' autoplay loop mute></video>
+  <video id='video2'  autoplay loop style="display:none" mute>
+    <source src='./images/sufis-new-short.mov'>
+    <source src='./images/sufis-new-short.webm'>
+  </video>
+  <video id='video'  autoplay loop mute>
+    <source src='./images/black.mov'>
+    <source src='./images/black.webm'>
+  </video>
   <div id='text'>ZYA-SWIRL</div>
   <div id='spin'><i class="fa fa-circle-o-notch fa-spin"></i></div>
   <div id='play'><i class="fa fa-play" id='icon'></i></div>
