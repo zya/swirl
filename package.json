@@ -17,6 +17,7 @@
   },
   "dependencies": {
     "lodash": "~3.10.1",
-    "three": "~0.71.0"
+    "three": "~0.71.0",
+    "dynamics.js": "0.0.7"
   }
 }

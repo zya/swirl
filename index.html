@@ -10,12 +10,19 @@
     height: 100%;
     overflow: hidden;
   }
+  #video {
+    position: fixed;
+    top:0;
+    left: 0;
+    height: 100vmax;
+    z-index: -4;
+    /*display: none;*/
+  }
   </style>
 </head>
 <body>
   <video id='video2' src='./images/sufis-new-short.mov' autoplay loop style="display:none" mute></video>
-  <video id='video' src='./images/black.mov' autoplay loop style="display:none" mute></video>
-  <video id='video3' src='./images/black-background-sufi-short.mov' autoplay loop style="display:none" mute></video>
+  <video id='video' src='./images/black.mov' autoplay loop mute></video>
 </body>
 <script type="text/javascript" src='./build/main.js'></script>
 </html>
