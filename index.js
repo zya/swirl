@@ -130,6 +130,8 @@ loadSound(context, './audio/zya.mp3', function (audiobuffer) {
     });
 
   }, 1100);
+}, function () {
+  console.log('Failed to load or decode the audio');
 });
 
 function animate() {
