@@ -73,7 +73,7 @@ function audioEnded() {
   });
 }
 
-loadSound(context, './audio/zya2.mp3', function (audiobuffer) {
+loadSound(context, './audio/zya-swirl.mp3', function (audiobuffer) {
   buffer = audiobuffer;
 
   play.style.visibility = 'visible';
