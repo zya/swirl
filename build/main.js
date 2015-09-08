@@ -164,7 +164,7 @@ function animate() {
 
   camera.lookAt(scene.position);
   var audioAmp = getAmp(audioData);
-  material.uniforms.scale.value = scale(audioAmp, audioOptions.inputMin, audioOptions.inputMax, 0.8, 1.5);
+  material.uniforms.scale.value = scale(audioAmp, audioOptions.inputMin, audioOptions.inputMax, 0.8, 1.7);
   renderer.render(scene, camera);
 }
 
