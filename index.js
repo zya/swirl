@@ -1,6 +1,7 @@
 var THREE = require('three');
 THREE.OBJLoader = require('./lib/objLoader');
 var dynamics = require('dynamics.js');
+var bowser = require('bowser');
 var loader = new THREE.OBJLoader();
 
 var scale = require('./lib/scale');
@@ -27,6 +28,19 @@ var src;
 var playTime = 0;
 var pauseTime = 0;
 var firstTime = true;
+
+var audioOptions = {
+  somoothing: 0.7,
+  inputMin: 80,
+  inputMax: 120,
+};
+
+if (bowser.safari) {
+  audioOptions.inputMin = -120;
+  audioOptions.inputMax = -80;
+  audioOptions.somoothing = 0.4;
+  audioData = new Float32Array(analyser.frequencyBinCount);
+}
 
 var mouseX = 0;
 var mouseY = 0;
@@ -134,14 +148,22 @@ loadSound(context, './audio/zya-swirl.mp3', function (audiobuffer) {
   console.log('Failed to load or decode the audio');
 });
 
+setInterval(function () {
+  if (bowser.safari) {
+    analyser.getFloatFrequencyData(audioData);
+  } else {
+    analyser.getByteFrequencyData(audioData);
+  }
+}, 25);
+
 function animate() {
   requestAnimationFrame(animate);
-  camera.position.x += (mouseX - camera.position.x) * 0.005;
+  camera.position.x += (mouseX - camera.position.x) * 0.009;
   camera.position.y += (-mouseY - camera.position.y) * 0.009;
-  analyser.getByteFrequencyData(audioData);
+
   camera.lookAt(scene.position);
   var audioAmp = getAmp(audioData);
-  material.uniforms.scale.value = scale(audioAmp, 80, 120, 0.8, 1.6);
+  material.uniforms.scale.value = scale(audioAmp, audioOptions.inputMin, audioOptions.inputMax, 0.8, 1.5);
   renderer.render(scene, camera);
 }
 
