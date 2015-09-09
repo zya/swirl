@@ -121,6 +121,9 @@ if (window.AudioContext && webgl) {
 
 var play = document.getElementById('play');
 var pause = document.getElementById('pause');
+var text = document.getElementById('text');
+var sc = document.getElementById('sc');
+var warning = document.getElementById('warning');
 
 var audioData = new Uint8Array(256 / 2);
 var buffer;
@@ -148,11 +151,13 @@ var windowHalfX = window.innerWidth / 2;
 var windowHalfY = window.innerHeight / 2;
 var spinner = document.getElementById('spin');
 
-window.addEventListener('resize', function () {
-  camera.aspect = window.innerWidth / window.innerHeight;
-  camera.updateProjectionMatrix();
-  renderer.setSize(window.innerWidth, window.innerHeight);
-}, false);
+if (webgl && window.AudioContext) {
+  window.addEventListener('resize', function () {
+    camera.aspect = window.innerWidth / window.innerHeight;
+    camera.updateProjectionMatrix();
+    renderer.setSize(window.innerWidth, window.innerHeight);
+  }, false);
+}
 
 function audioEnded() {
   pause.style.visibility = 'hidden';
@@ -164,7 +169,6 @@ function audioEnded() {
     duration: 3000
   });
 }
-
 
 setInterval(function () {
   if (bowser.safari && webgl && window.AudioContext) {
@@ -185,9 +189,17 @@ function animate() {
   renderer.render(scene, camera);
 }
 
-if (!bowser.mobile && webgl && window.AudioContext) {
+if (!bowser.mobile && webgl && window.AudioContext && !bowser.tablet) {
   animate();
 } else {
   play.style.display = 'none';
   spinner.style.display = 'none';
+  text.style.display = 'none';
+  spinner.style.display = 'none';
+  sc.style.display = 'block';
+  warning.style.transition = 'opacity 3s ease-in';
+  warning.style.opacity = 0.0;
+  setTimeout(function () {
+    warning.style.opacity = 1.0;
+  }, 2);
 }
