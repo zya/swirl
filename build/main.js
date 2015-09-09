@@ -47,6 +47,7 @@ function startAudio() {
 
       play.addEventListener('click', function () {
         renderer.domElement.style.visibility = 'visible';
+
         pause.style.visibility = 'visible';
         pause.style.opacity = 1;
         play.style.visibility = 'hidden';
@@ -100,6 +101,7 @@ function startWebGL() {
   renderer.setSize(window.innerWidth, window.innerHeight);
   document.body.appendChild(renderer.domElement);
   renderer.domElement.style.cursor = 'pointer';
+  renderer.domElement.style.zIndex = '20';
 
   scene = new THREE.Scene();
 
@@ -194,6 +196,7 @@ if (!bowser.mobile && webgl && window.AudioContext && !bowser.tablet) {
   animate();
 } else {
   play.style.display = 'none';
+  document.body.style.backgroundColor = 'black';
   spinner.style.display = 'none';
   text.style.display = 'none';
   spinner.style.display = 'none';

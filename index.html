@@ -2,10 +2,10 @@
 <html>
 <head>
   <title>ATOUR-SWIRL</title>
+  <meta property="og:title" content="Atour - Swirl | Interactive Experience" />
+  <meta property="og:url" content="http://www.zya.cc/swirl" />
   <meta property="og:description" content="Audio Reactive Interactive Visual Experience for Atour's New Release, Swirl" />
-
-<meta property="og:image"
-content="http://static.tumblr.com/oczhivm/DGNnufey7/atour_-_swirl.jpg" />
+  <meta property="og:image" content="http://static.tumblr.com/oczhivm/DGNnufey7/atour_-_swirl.jpg" />
   <style type="text/css">
   html, body {
     margin: 0;
@@ -13,15 +13,13 @@ content="http://static.tumblr.com/oczhivm/DGNnufey7/atour_-_swirl.jpg" />
     width: 100%;
     height: 100%;
     overflow: hidden;
-    background-color: black;
   }
   #video {
     position: fixed;
     top:0;
     left: 0;
     height: 100vmax;
-    z-index: 1;
-    /*display: none;*/
+    z-index: -3;
   }
   #text{
     text-align: center;
@@ -35,7 +33,6 @@ content="http://static.tumblr.com/oczhivm/DGNnufey7/atour_-_swirl.jpg" />
     padding: 0;
     margin:0;
     margin-left: 2px;
-    /*font-weight: 700;*/
   }
   #spin{
     bottom:  9vh;
@@ -118,14 +115,6 @@ content="http://static.tumblr.com/oczhivm/DGNnufey7/atour_-_swirl.jpg" />
     opacity: 0;
   }
   
-  /*@media (max-width: 900px) {
-    #sc{
-      width: 90%;
-      height: 90%;
-      left: 5%;
-      top: 5%;
-    }
-  }*/
   </style>
   <link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/font-awesome/4.4.0/css/font-awesome.min.css">
   <link href='https://fonts.googleapis.com/css?family=Arimo:400,700|Noto+Sans|Inconsolata' rel='stylesheet' type='text/css'>
@@ -139,7 +128,7 @@ content="http://static.tumblr.com/oczhivm/DGNnufey7/atour_-_swirl.jpg" />
     <source src='./images/black.webm'>
     <source src='./images/black.mov'>
   </video>
-  <div id='text'>ZYA-SWIRL</div>
+  <div id='text'>ATOUR-SWIRL</div>
   <div id='spin'><i class="fa fa-circle-o-notch fa-spin"></i></div>
   <div id='play'><i class="fa fa-play" id='icon'></i></div>
   <div id='pause'><i class="fa fa-stop" id='icon'></i></div>
