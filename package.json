@@ -16,9 +16,10 @@
     "watchify": "^3.3.1"
   },
   "dependencies": {
-    "lodash": "~3.10.1",
-    "three": "~0.71.0",
+    "bowser": "~1.0.0",
+    "detector-webgl": "^1.0.0",
     "dynamics.js": "0.0.7",
-    "bowser": "~1.0.0"
+    "lodash": "~3.10.1",
+    "three": "~0.71.0"
   }
 }

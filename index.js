@@ -2,6 +2,7 @@ var THREE = require('three');
 THREE.OBJLoader = require('./lib/objLoader');
 var dynamics = require('dynamics.js');
 var bowser = require('bowser');
+var webgl = require('detector-webgl');
 var loader = new THREE.OBJLoader();
 
 var scale = require('./lib/scale');
@@ -12,17 +13,117 @@ var loadSound = require('./lib/loadSound');
 var getAmp = require('./lib/calculateAmp');
 var canvasOnClickEvent = require('./lib/canvasOnClick');
 
+var context;
+var analyser;
+var renderer;
+var scene;
+
 window.AudioContext = window.AudioContext || window.webkitAudioContext || window.mozAudioContext || window.oAudioContext;
-var context = new AudioContext();
-var analyser = context.createAnalyser();
-analyser.connect(context.destination);
-analyser.fftSize = 256;
-analyser.smoothingTimeConstant = 0.7;
+window.AudioContext = null;
+
+function startAudio() {
+  context = new AudioContext();
+  analyser = context.createAnalyser();
+  analyser.connect(context.destination);
+  analyser.fftSize = 256;
+  analyser.smoothingTimeConstant = 0.7;
+
+  loadSound(context, './audio/zya-swirl.mp3', function(audiobuffer) {
+    buffer = audiobuffer;
+
+    play.style.visibility = 'visible';
+    dynamics.animate(spinner, {
+      opacity: 0
+    }, {
+      duration: 1000
+    });
+
+    setTimeout(function() {
+      dynamics.animate(play, {
+        opacity: 1
+      }, {
+        duration: 1000
+      });
+
+      play.addEventListener('click', function() {
+        renderer.domElement.style.visibility = 'visible';
+        pause.style.visibility = 'visible';
+        pause.style.opacity = 1;
+        play.style.visibility = 'hidden';
+
+        if (firstTime) {
+          dynamics.animate(renderer.domElement, {
+            opacity: 1
+          }, {
+            duration: 4000
+          });
+          setTimeout(function() {
+            playTime = context.currentTime;
+            firstTime = false;
+            src = context.createBufferSource();
+            src.connect(analyser);
+            src.buffer = buffer;
+            src.onended = audioEnded;
+            src.start(0);
+          }, 1500);
+        } else {
+          var offset = pauseTime - playTime;
+          src = context.createBufferSource();
+          src.connect(analyser);
+          src.buffer = buffer;
+          src.start(0, offset);
+          src.onended = audioEnded;
+          playTime = context.currentTime;
+        }
+      });
+
+      pause.addEventListener('click', function() {
+        pauseTime = context.currentTime;
+        pause.style.visibility = 'hidden';
+        play.style.visibility = 'visible';
+        src.stop(0);
+      });
+
+    }, 1100);
+  }, function() {
+    console.log('Failed to load or decode the audio');
+  });
+
+}
+
+function startWebGL() {
+  renderer = new THREE.WebGLRenderer({
+    antialias: false,
+    alpha: true
+  });
+
+  renderer.setSize(window.innerWidth, window.innerHeight);
+  document.body.appendChild(renderer.domElement);
+  renderer.domElement.style.cursor = 'pointer';
+
+  scene = new THREE.Scene();
+
+  var ambient = new THREE.AmbientLight(0xffffff);
+  scene.add(ambient);
+  scene.add(mesh);
+
+  document.addEventListener('mousemove', function(event) {
+    mouseX = (event.clientX - windowHalfX) * 1.05;
+    mouseY = (event.clientY - windowHalfY) * 1.08;
+  });
+
+  renderer.domElement.addEventListener('click', canvasOnClickEvent);
+}
+
+if (window.AudioContext && webgl) {
+  startAudio();
+  startWebGL();
+}
 
 var play = document.getElementById('play');
 var pause = document.getElementById('pause');
 
-var audioData = new Uint8Array(analyser.frequencyBinCount);
+var audioData = new Uint8Array(256 / 2);
 var buffer;
 var src;
 var playTime = 0;
@@ -48,29 +149,7 @@ var windowHalfX = window.innerWidth / 2;
 var windowHalfY = window.innerHeight / 2;
 var spinner = document.getElementById('spin');
 
-var renderer = new THREE.WebGLRenderer({
-  antialias: false,
-  alpha: true
-});
-
-renderer.setSize(window.innerWidth, window.innerHeight);
-document.body.appendChild(renderer.domElement);
-renderer.domElement.style.cursor = 'pointer';
-
-var scene = new THREE.Scene();
-
-var ambient = new THREE.AmbientLight(0xffffff);
-scene.add(ambient);
-scene.add(mesh);
-
-document.addEventListener('mousemove', function (event) {
-  mouseX = (event.clientX - windowHalfX) * 1.05;
-  mouseY = (event.clientY - windowHalfY) * 1.08;
-});
-
-renderer.domElement.addEventListener('click', canvasOnClickEvent);
-
-window.addEventListener('resize', function () {
+window.addEventListener('resize', function() {
   camera.aspect = window.innerWidth / window.innerHeight;
   camera.updateProjectionMatrix();
   renderer.setSize(window.innerWidth, window.innerHeight);
@@ -87,71 +166,11 @@ function audioEnded() {
   });
 }
 
-loadSound(context, './audio/zya-swirl.mp3', function (audiobuffer) {
-  buffer = audiobuffer;
 
-  play.style.visibility = 'visible';
-  dynamics.animate(spinner, {
-    opacity: 0
-  }, {
-    duration: 1000
-  });
-
-  setTimeout(function () {
-    dynamics.animate(play, {
-      opacity: 1
-    }, {
-      duration: 1000
-    });
-
-    play.addEventListener('click', function () {
-      renderer.domElement.style.visibility = 'visible';
-      pause.style.visibility = 'visible';
-      pause.style.opacity = 1;
-      play.style.visibility = 'hidden';
-
-      if (firstTime) {
-        dynamics.animate(renderer.domElement, {
-          opacity: 1
-        }, {
-          duration: 4000
-        });
-        setTimeout(function () {
-          playTime = context.currentTime;
-          firstTime = false;
-          src = context.createBufferSource();
-          src.connect(analyser);
-          src.buffer = buffer;
-          src.onended = audioEnded;
-          src.start(0);
-        }, 1500);
-      } else {
-        var offset = pauseTime - playTime;
-        src = context.createBufferSource();
-        src.connect(analyser);
-        src.buffer = buffer;
-        src.start(0, offset);
-        src.onended = audioEnded;
-        playTime = context.currentTime;
-      }
-    });
-
-    pause.addEventListener('click', function () {
-      pauseTime = context.currentTime;
-      pause.style.visibility = 'hidden';
-      play.style.visibility = 'visible';
-      src.stop(0);
-    });
-
-  }, 1100);
-}, function () {
-  console.log('Failed to load or decode the audio');
-});
-
-setInterval(function () {
-  if (bowser.safari) {
+setInterval(function() {
+  if (bowser.safari && webgl && window.AudioContext) {
     analyser.getFloatFrequencyData(audioData);
-  } else {
+  } else if (webgl && window.AudioContext) {
     analyser.getByteFrequencyData(audioData);
   }
 }, 25);
@@ -167,4 +186,9 @@ function animate() {
   renderer.render(scene, camera);
 }
 
-animate();
+if (!bowser.mobile && webgl && window.AudioContext) {
+  animate();
+} else {
+  play.style.display = 'none';
+  spinner.style.display = 'none';
+}
