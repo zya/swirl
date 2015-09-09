@@ -20,7 +20,6 @@ var renderer;
 var scene;
 
 window.AudioContext = window.AudioContext || window.webkitAudioContext || window.mozAudioContext || window.oAudioContext;
-window.AudioContext = null;
 
 function startAudio() {
   context = new AudioContext();
@@ -29,7 +28,7 @@ function startAudio() {
   analyser.fftSize = 256;
   analyser.smoothingTimeConstant = 0.7;
 
-  loadSound(context, './audio/zya-swirl.mp3', function(audiobuffer) {
+  loadSound(context, './audio/zya-swirl.mp3', function (audiobuffer) {
     buffer = audiobuffer;
 
     play.style.visibility = 'visible';
@@ -39,14 +38,14 @@ function startAudio() {
       duration: 1000
     });
 
-    setTimeout(function() {
+    setTimeout(function () {
       dynamics.animate(play, {
         opacity: 1
       }, {
         duration: 1000
       });
 
-      play.addEventListener('click', function() {
+      play.addEventListener('click', function () {
         renderer.domElement.style.visibility = 'visible';
         pause.style.visibility = 'visible';
         pause.style.opacity = 1;
@@ -58,7 +57,7 @@ function startAudio() {
           }, {
             duration: 4000
           });
-          setTimeout(function() {
+          setTimeout(function () {
             playTime = context.currentTime;
             firstTime = false;
             src = context.createBufferSource();
@@ -78,7 +77,7 @@ function startAudio() {
         }
       });
 
-      pause.addEventListener('click', function() {
+      pause.addEventListener('click', function () {
         pauseTime = context.currentTime;
         pause.style.visibility = 'hidden';
         play.style.visibility = 'visible';
@@ -86,7 +85,7 @@ function startAudio() {
       });
 
     }, 1100);
-  }, function() {
+  }, function () {
     console.log('Failed to load or decode the audio');
   });
 
@@ -108,7 +107,7 @@ function startWebGL() {
   scene.add(ambient);
   scene.add(mesh);
 
-  document.addEventListener('mousemove', function(event) {
+  document.addEventListener('mousemove', function (event) {
     mouseX = (event.clientX - windowHalfX) * 1.05;
     mouseY = (event.clientY - windowHalfY) * 1.08;
   });
@@ -150,7 +149,7 @@ var windowHalfX = window.innerWidth / 2;
 var windowHalfY = window.innerHeight / 2;
 var spinner = document.getElementById('spin');
 
-window.addEventListener('resize', function() {
+window.addEventListener('resize', function () {
   camera.aspect = window.innerWidth / window.innerHeight;
   camera.updateProjectionMatrix();
   renderer.setSize(window.innerWidth, window.innerHeight);
@@ -168,7 +167,7 @@ function audioEnded() {
 }
 
 
-setInterval(function() {
+setInterval(function () {
   if (bowser.safari && webgl && window.AudioContext) {
     analyser.getFloatFrequencyData(audioData);
   } else if (webgl && window.AudioContext) {
@@ -193,7 +192,6 @@ if (!bowser.mobile && webgl && window.AudioContext) {
   play.style.display = 'none';
   spinner.style.display = 'none';
 }
-
 },{"./lib/calculateAmp":2,"./lib/camera":3,"./lib/canvasOnClick":4,"./lib/loadSound":5,"./lib/mesh":6,"./lib/objLoader":7,"./lib/scale":8,"bowser":11,"detector-webgl":12,"dynamics.js":13,"three":14}],2:[function(require,module,exports){
 module.exports = function (audioArray) {
   var total = 0;
